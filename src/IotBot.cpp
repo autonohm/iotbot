@@ -21,8 +21,9 @@ IotBot::IotBot(ChassisParams &chassisParams, MotorParams &motorParams)
   _vMax             = motorParams.rpmMax * _rpm2ms;
   _omegaMax         = motorParams.rpmMax * _rpm2rad;
 
-  _joySub = _nh.subscribe<sensor_msgs::Joy>("joy", 10, &IotBot::joyCallback, this);
-  _velSub = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 10, &IotBot::velocityCallback, this);
+  _joySub    = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &IotBot::joyCallback, this);
+  _velSub    = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 1, &IotBot::velocityCallback, this);
+ 
   _rpm[0] = 0.0;
   _rpm[1] = 0.0;
   _rpm[2] = 0.0;
@@ -41,7 +42,6 @@ void IotBot::run()
 {
   ros::Rate rate(100);
   _lastCmd = ros::Time::now();
-  unsigned int cnt;
 
   bool run = true;
 
@@ -51,7 +51,9 @@ void IotBot::run()
   char tx_buffer[8];
   char rx_buffer[1024];
   int state = 0;
-  //_serial->receive((char*)rx_buffer,1024);
+
+
+  unsigned int cnt = 0;
   while(run)
   {
     ros::spinOnce();
@@ -91,11 +93,11 @@ void IotBot::run()
       case 0:
         if(_serial->send((char*)tx_buffer, 8)==8)
         {
-          std::cout << "# Sent uart data " << std::endl;
-          std::cout << std::setprecision(2) << std::fixed << "rpm[0]=" << (int)tx_buffer[0] << "rpm, rpm[1]=" << (int)tx_buffer[1] << "rpm, rpm[2]=" << (int)tx_buffer[2]  << "rpm, rpm[3]=" << (int)tx_buffer[3] << "rpm" << std::endl;
-          std::cout << "------------------------------" << std::endl;
+          // Subsample debug messages
+          if(cnt%10==0) std::cout << "# Sent 8 bytes of uart data" << std::endl;
+          cnt++;
+          state = 1;
         }
-           state = 1;
         break;
       case 1:
         if(_serial->receive(rx_buffer, 10))
@@ -110,10 +112,9 @@ void IotBot::run()
           r[3] = ((float)sval) / 10.f;
           voltage = (float)((rx_buffer[8] & 0x00FF) | (((int)rx_buffer[9])<<8) & 0xFF00) / 100.f;
 
-          std::cout << "# Received uart data " << std::endl;
-          std::cout << std::setprecision(2) << std::fixed << "r[0]=" << r[0] << "rpm, r[1]=" << r[1] << "rpm, r[2]=" << r[2]  << "rpm, r[3]=" << r[3] << "rpm" << std::endl;
-          std::cout << std::setprecision(2) << std::fixed << "Vin=" << voltage << "V" << std::endl;
-          std::cout << "------------------------------" << std::endl;
+          if(cnt%10==0) std::cout << "# Received: ";
+          if(cnt%10==0) std::cout << std::setprecision(2) << std::fixed << "r[0]=" << r[0] << "rpm, r[1]=" << r[1] << "rpm, r[2]=" << r[2]  << "rpm, r[3]=" << r[3] << "rpm";
+          if(cnt%10==0) std::cout << std::setprecision(2) << std::fixed << ", Vin=" << voltage << "V" << std::endl;
         }
 	state = 0;
 	break;
@@ -121,12 +122,6 @@ void IotBot::run()
          break;
     }
     rate.sleep();
-
-    
-/*    else
-    {
-      std::cout << "# Failed to send uart data " << std::endl;
-    }*/
 
     run = ros::ok();
 
@@ -160,7 +155,7 @@ void IotBot::controlMotors(float vFwd, float vLeft, float omega)
   float rpmOmega = omega * _rad2rpm;
   rpmLeft = 0; // deactivated movement in y-direction
   //cout << "vFwd: " << vFwd << "m/s, vLeft: " << vLeft << "m/s, omega: " << omega << endl;
-  cout << "rpmFwd: " << rpmFwd << ", rpmLeft: " << rpmLeft << ", rpmOmega: " << rpmOmega << endl;
+  //cout << "rpmFwd: " << rpmFwd << ", rpmLeft: " << rpmLeft << ", rpmOmega: " << rpmOmega << endl;
 
   // leading signs -> see derivation: Stefan May, Skriptum Mobile Robotik
   _rpm[_chassisParams.chFrontLeft]  =  rpmFwd - rpmLeft - rpmOmega;
@@ -174,7 +169,6 @@ void IotBot::controlMotors(float vFwd, float vLeft, float omega)
   _rpm[2] *= _chassisParams.direction;
   _rpm[3] *= _chassisParams.direction;
 
-std::cout << "###" << _rpm[0] << " " << _rpm[1] << " " << _rpm[2] << " " << _rpm[3] << std::endl;
   // Normalize values, if any value exceeds the maximum
   float rpmMax = std::abs(_rpm[0]);
   for(int i=1; i<4; i++)
