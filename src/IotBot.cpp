@@ -155,7 +155,7 @@ void IotBot::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy)
   float left     = joy->axes[0];            // Range of values [-1:1]
   float turn     = joy->axes[3];            // Range of values [-1:1]
   //float throttle = (joy->axes[7]+1.0)/2.0;  // Range of values [0:1]
-  float throttle = 0,5; // 
+  float throttle = 0.5; // 
 
   float vFwd  = throttle * fwd  * _vMax;
   float vLeft = throttle * left * _vMax;
