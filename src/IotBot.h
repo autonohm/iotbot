@@ -109,7 +109,7 @@ private:
    * ROS joystick callback
    * @param[in] joy message with joystick command
    */
-    void joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy) ;
+  void joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy) ;
     
   /**
    * ROS command velocity callback
@@ -126,12 +126,10 @@ private:
    */
   void controlMotors(float vFwd, float vLeft, float omega);
 
-  //ros::NodeHandle        _nh;
-  //ros::Subscriber        _joySub;
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr _joySub; 
-
-  //ros::Subscriber        _velSub;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr _velSub; 
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr _joySub;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr _velSub;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _velPub; 
+ 
   
 
   ChassisParams          _chassisParams;

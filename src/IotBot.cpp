@@ -44,7 +44,6 @@ void IotBot::run()
   rclcpp::Clock ros_clock(RCL_ROS_TIME);
   _lastCmd = ros_clock.now();
 
-
   bool run = true;
 
   float r[4];
@@ -54,20 +53,21 @@ void IotBot::run()
   char rx_buffer[1024];
   int state = 0;
 
-
   unsigned int cnt = 0;
   while(run)
-
-    auto node = rclcpp::Node::make_shared("iot_sub_node");
+  {
+    auto Node = rclcpp::Node::make_shared("iot_sub_node");
     // initialize subscribers
-    _joySub =  node->create_subscription<sensor_msgs::msg::Joy>("joy", 1, std::bind(&IotBot::joyCallback, this , std::placeholders::_1));
-    _velSub = node->create_subscription<geometry_msgs::msg::Twist>("vel/teleop", 1, std::bind(&IotBot::velocityCallback, this, std::placeholders::_1));
-4
-    rclcpp::spin_some(node);
+    _joySub =  Node->create_subscription<sensor_msgs::msg::Joy>("joy", 1, std::bind(&IotBot::joyCallback, this , std::placeholders::_1));
+    _velSub = Node->create_subscription<geometry_msgs::msg::Twist>("vel/teleop", 1, std::bind(&IotBot::velocityCallback, this, std::placeholders::_1));
+
+    //initialize Publisher
+    _velPub = this->create_publisher<geometry_msgs::msg::Twist>("/vel/robot", 50); 
+
+    rclcpp::spin_some(Node);
     rclcpp::Duration dt = ros_clock.now() - _lastCmd;
                   
-    bool lag = (dt.nanoseconds()/100000000>5);
-    //bool lag = (dt.nanoseconds()/1000000000>0.5);
+    bool lag = (dt.nanoseconds()/1000000000>0.5);
       
     if(lag)
     {
@@ -124,6 +124,19 @@ void IotBot::run()
           if(cnt%10==0) std::cout << "# Received: ";
           if(cnt%10==0) std::cout << std::setprecision(2) << std::fixed << "r[0]=" << r[0] << "rpm, r[1]=" << r[1] << "rpm, r[2]=" << r[2]  << "rpm, r[3]=" << r[3] << "rpm";
           if(cnt%10==0) std::cout << std::setprecision(2) << std::fixed << ", Vin=" << voltage << "V" << std::endl;
+          //TODO: publish r[0] bis r[3]
+
+          //rpm to m/s
+          float vFwd = 1/2 * (r[0] - r[1]) * _rpm2ms ;
+          float omega = -1/2 * (r[0] + r[1]) * _rpm2rad;
+
+          auto msgTwist = geometry_msgs::msg::Twist();
+
+          msgTwist.linear.x = vFwd;
+          msgTwist.linear.y = 0;
+          msgTwist.linear.z = 0;
+          msgTwist.angular.z = omega;
+          _velPub->publish(msgTwist); 
         }
 	state = 0;
 	break;
@@ -140,8 +153,9 @@ void IotBot::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy)
   // Assignment of joystick axes to motor commands
   float fwd      = joy->axes[1];            // Range of values [-1:1]
   float left     = joy->axes[0];            // Range of values [-1:1]
-  float turn     = joy->axes[2];            // Range of values [-1:1]
-  float throttle = (joy->axes[3]+1.0)/2.0;  // Range of values [0:1]
+  float turn     = joy->axes[3];            // Range of values [-1:1]
+  //float throttle = (joy->axes[7]+1.0)/2.0;  // Range of values [0:1]
+  float throttle = 0,5; // 
 
   float vFwd  = throttle * fwd  * _vMax;
   float vLeft = throttle * left * _vMax;
@@ -162,23 +176,18 @@ void IotBot::controlMotors(float vFwd, float vLeft, float omega)
   float rpmLeft  = vLeft * _ms2rpm;
   float rpmOmega = omega * _rad2rpm;
   rpmLeft = 0; // deactivated movement in y-direction
-  std::cout << "vFwd: " << vFwd << "m/s, vLeft: " << vLeft << "m/s, omega: " << omega << endl;
-  std::cout << "rpmFwd: " << rpmFwd << ", rpmLeft: " << rpmLeft << ", rpmOmega: " << rpmOmega << endl;
-
+  
   // leading signs -> see derivation: Stefan May, Skriptum Mobile Robotik
   _rpm[_chassisParams.chFrontLeft]  =  rpmFwd - rpmLeft - rpmOmega;
   _rpm[_chassisParams.chFrontRight] = -rpmFwd - rpmLeft - rpmOmega;
   _rpm[_chassisParams.chRearLeft]   =  rpmFwd + rpmLeft - rpmOmega;
   _rpm[_chassisParams.chRearRight]  = -rpmFwd + rpmLeft - rpmOmega;
   
-
   // possibility to flip directions
   _rpm[0] *= _chassisParams.direction;
   _rpm[1] *= _chassisParams.direction;
   _rpm[2] *= _chassisParams.direction;
-  _rpm[3] *= _chassisParams.direction;
-
-  
+  _rpm[3] *= _chassisParams.direction;  
 
   // Normalize values, if any value exceeds the maximum
   float rpmMax = std::abs(_rpm[0]);
@@ -203,6 +212,6 @@ void IotBot::controlMotors(float vFwd, float vLeft, float omega)
 
   //_lastCmd = ros::Time::now();
   rclcpp::Clock ros_clock(RCL_ROS_TIME);
-   _lastCmd = ros_clock.now();
+  _lastCmd = ros_clock.now();
 
 }
