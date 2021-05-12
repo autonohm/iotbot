@@ -6,14 +6,17 @@
 #include <geometry_msgs/Twist.h>
 
 #include <iostream>
-#include "SerialPort.h"
+#include "IOTShield.h"
 
 using namespace std;
+
+namespace iotbot
+{
 
 /**
  * @struct Structure for encapsulating motor parameters
  * @author Stefan May
- * @date 04.10.2020
+ * @date 08.05.2021
  */
 struct MotorParams
 {
@@ -46,7 +49,7 @@ struct MotorParams
 /**
  * @struct Structure for encapsulating parameters of robot chassis
  * @author Stefan May
- * @date 04.10.2020
+ * @date 08.05.2021
  */
 struct ChassisParams
 {
@@ -75,7 +78,7 @@ struct ChassisParams
 /**
  * @class Main class for IotBot
  * @author Stefan May
- * @date 02.10.2020
+ * @date 08.05.2021
  */
 class IotBot
 {
@@ -126,7 +129,7 @@ private:
 
   ChassisParams          _chassisParams;
   MotorParams*           _motorParams;
-  SerialPort*            _serial;
+  IOTShield*             _shield;
 
   // revolutions per minute for each channel
   float                  _rpm[4];
@@ -152,5 +155,7 @@ private:
   // time elapsed since last call
   ros::Time              _lastCmd;
 };
+
+} // end namespace
 
 #endif

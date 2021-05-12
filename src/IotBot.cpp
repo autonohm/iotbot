@@ -4,15 +4,25 @@
 
 using namespace std;
 
+namespace iotbot
+{
+
 IotBot::IotBot(ChassisParams &chassisParams, MotorParams &motorParams)
 {
-  _serial = new SerialPort("/dev/ttyS1", B115200);
-
   _motorParams  = new MotorParams(motorParams);
   _chassisParams = chassisParams;
   // ensure that the direction parameter is set properly (either 1 or -1)
   if(_chassisParams.direction>0) _chassisParams.direction = 1;
   else _chassisParams.direction = -1;
+
+  _shield = new IOTShield();
+  _shield->enable(); 
+  _shield->setGearRatio(_motorParams->gearRatio);
+  _shield->setTicksPerRev(_motorParams->encoderRatio);
+  _shield->setKp(0);
+  _shield->setKi(20);
+  _shield->setKd(0.0);
+  _shield->setLighting(iotbot::dimLight);
 
   _rad2rpm          = (chassisParams.wheelBase+chassisParams.track)/chassisParams.wheelDiameter; // (lx+ly)/2 * 1/r
   _rpm2rad          = 1.0 / _rad2rpm;
@@ -34,7 +44,8 @@ IotBot::IotBot(ChassisParams &chassisParams, MotorParams &motorParams)
 
 IotBot::~IotBot()
 {
-  delete _serial;
+  _shield->setLighting(iotbot::pulsation);
+  delete _shield;
   delete _motorParams;
 }
 
@@ -48,8 +59,6 @@ void IotBot::run()
   float r[4];
   float voltage;
 
-  char tx_buffer[8];
-  char rx_buffer[1024];
   int state = 0;
 
 
@@ -63,64 +72,13 @@ void IotBot::run()
     if(lag)
     {
       ROS_WARN_STREAM("Lag detected ... deactivate motor control");
-      tx_buffer[0] = 0;
-      tx_buffer[1] = 0;
-      tx_buffer[2] = 0;
-      tx_buffer[3] = 0;
-      tx_buffer[4] = 0;
-      tx_buffer[5] = 0;
-      tx_buffer[6] = 0;
-      tx_buffer[7] = 0;
+      _shield->disable();
     }
     else
     {
-      short txval = _rpm[0];
-      tx_buffer[0] = txval & 0x00FF;
-      tx_buffer[1] = (txval>>8) & 0x00FF;
-      txval = _rpm[1];
-      tx_buffer[2] = txval & 0x00FF;
-      tx_buffer[3] = (txval>>8) & 0x00FF;
-      txval = _rpm[2];
-      tx_buffer[4] = txval & 0x00FF;
-      tx_buffer[5] = (txval>>8) & 0x00FF;
-      txval = _rpm[3];
-      tx_buffer[6] = txval & 0x00FF;
-      tx_buffer[7] = (txval>>8) & 0x00FF;
+      _shield->setRPM(_rpm);
     }
-
-    switch(state)
-    {
-      case 0:
-        if(_serial->send((char*)tx_buffer, 8)==8)
-        {
-          // Subsample debug messages
-          if(cnt%10==0) std::cout << "# Sent 8 bytes of uart data" << std::endl;
-          cnt++;
-          state = 1;
-        }
-        break;
-      case 1:
-        if(_serial->receive(rx_buffer, 10))
-        {
-          short sval = rx_buffer[0] | (((int)rx_buffer[1])<<8) & 0xFF00;
-          r[0] = ((float)sval) / 10.f;
-          sval = rx_buffer[2] | (((int)rx_buffer[3])<<8) & 0xFF00;
-          r[1] = ((float)sval) / 10.f;
-          sval = rx_buffer[4] | (((int)rx_buffer[5])<<8) & 0xFF00;
-          r[2] = ((float)sval) / 10.f;
-          sval = rx_buffer[6] | (((int)rx_buffer[7])<<8) & 0xFF00;
-          r[3] = ((float)sval) / 10.f;
-          voltage = (float)((rx_buffer[8] & 0x00FF) | (((int)rx_buffer[9])<<8) & 0xFF00) / 100.f;
-
-          if(cnt%10==0) std::cout << "# Received: ";
-          if(cnt%10==0) std::cout << std::setprecision(2) << std::fixed << "r[0]=" << r[0] << "rpm, r[1]=" << r[1] << "rpm, r[2]=" << r[2]  << "rpm, r[3]=" << r[3] << "rpm";
-          if(cnt%10==0) std::cout << std::setprecision(2) << std::fixed << ", Vin=" << voltage << "V" << std::endl;
-        }
-	state = 0;
-	break;
-       default:
-         break;
-    }
+    
     rate.sleep();
 
     run = ros::ok();
@@ -136,6 +94,24 @@ void IotBot::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
   float turn     = joy->axes[2];            // Range of values [-1:1]
   float throttle = (joy->axes[3]+1.0)/2.0;  // Range of values [0:1]
 
+  static int32_t btn0Prev   = joy->buttons[0];
+  static int32_t btn4Prev   = joy->buttons[4];
+  static int32_t btn5Prev   = joy->buttons[5];
+  
+  if(joy->buttons[0] && !btn0Prev)
+     _shield->setLighting(iotbot::beamLight);
+  if(joy->buttons[4] && !btn4Prev)
+     _shield->setLighting(iotbot::flashLeft);
+  if(joy->buttons[5] && !btn5Prev)
+     _shield->setLighting(iotbot::flashRight);
+     
+  btn0Prev   = joy->buttons[0];
+  btn4Prev   = joy->buttons[4];
+  btn5Prev   = joy->buttons[5];
+  
+  if(!btn0Prev && !btn4Prev && !btn5Prev)
+       _shield->setLighting(iotbot::dimLight);
+  
   float vFwd  = throttle * fwd  * _vMax;
   float vLeft = throttle * left * _vMax;
   float omega = throttle * turn * _omegaMax;
@@ -186,3 +162,5 @@ void IotBot::controlMotors(float vFwd, float vLeft, float omega)
 
   _lastCmd = ros::Time::now();
 }
+
+} // end namespace

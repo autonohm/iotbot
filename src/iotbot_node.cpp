@@ -5,30 +5,30 @@
 
 /**
  * @author Stefan May
- * @date 02.10.2020
- * @brief ROS node for the IOT2050 robot shield
+ * @date 08.05.2021
+ * @brief ROS node for the IOT2050 robot shield, Version 2
  **/
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "iotbot_node");
-  ChassisParams chassisParams;
-  MotorParams motorParams;
+  iotbot::ChassisParams chassisParams;
+  iotbot::MotorParams motorParams;
 
   // Assign motor channels to motor/wheel mounting
   ros::NodeHandle nh("~");
 
   nh.param("track",          chassisParams.track,               0.3f);
   nh.param("wheelBase",      chassisParams.wheelBase,           0.3f);
-  nh.param("wheelDiameter",  chassisParams.wheelDiameter,       0.12f);
-  nh.param("chFrontLeft",    chassisParams.chFrontLeft,         1);
-  nh.param("chFrontRight",   chassisParams.chFrontRight,        0);
-  nh.param("chRearLeft",     chassisParams.chRearLeft,          3);
-  nh.param("chRearRight",    chassisParams.chRearRight,         2);
-  nh.param("direction",      chassisParams.direction,           1);
-  nh.param("gearRatio",      motorParams.gearRatio,             51.f);
-  nh.param("encoderRatio",   motorParams.encoderRatio,          4096.f);
-  nh.param("rpmMax",         motorParams.rpmMax,                80.f);
+  nh.param("wheelDiameter",  chassisParams.wheelDiameter,       0.15f);
+  nh.param("chFrontLeft",    chassisParams.chFrontLeft,         3);
+  nh.param("chFrontRight",   chassisParams.chFrontRight,        1);
+  nh.param("chRearLeft",     chassisParams.chRearLeft,          2);
+  nh.param("chRearRight",    chassisParams.chRearRight,         0);
+  nh.param("direction",      chassisParams.direction,           -1);
+  nh.param("gearRatio",      motorParams.gearRatio,             70.f);
+  nh.param("encoderRatio",   motorParams.encoderRatio,          64.f);
+  nh.param("rpmMax",         motorParams.rpmMax,                140.f);
 
-  IotBot robot(chassisParams, motorParams);
+  iotbot::IotBot robot(chassisParams, motorParams);
   robot.run();
 }
