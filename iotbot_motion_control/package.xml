@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>iotbot_motion_control</name>
+  <version>0.0.1</version>
+  <description>ROS2 interface for different kinematic models for the IotBot</description>
+   <maintainer email="dgrenner@gmx.de">David Grenner</maintainer>
+  <license>TODO: License declaration</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <depend>rclcpp</depend>
+    <depend>std_msgs</depend>
+    <depend>joy</depend>
+    <depend>geometry_msgs</depend>
+    <depend>sensor_msgs</depend>
+    <depend>iotbot_interface</depend>
+
+  </export>
+</package>
