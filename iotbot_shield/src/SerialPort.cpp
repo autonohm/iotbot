@@ -310,8 +310,6 @@ void CSerialPort::initParamStruct()
 
 bool CSerialPort::setBaudrate(const unsigned int baudrate)
 {
-    
-    
     if (mraa::SUCCESS != uart_->setBaudRate(baudrate))
     {
         std::cerr << "iotbot::serial::CSerialPort::setBaudrate() -> error setting baudrate on UART" << std::endl;

@@ -35,7 +35,7 @@ private:
     bool isPortOpened_;
     volatile bool interruptDetected_;
 
-    typedef struct SerialParam
+    typedef struct
     {
         std::pair<bool, std::string> port;
         std::pair<bool, unsigned int> baudrate;
@@ -91,12 +91,12 @@ private:
     void setInterrupt();
 
     /**
-     * interrupt service routine
+     * interrupt service routine -> TODO
      */
     void irq_handler();
 
     /**
-     * process the interrupt handling
+     * process the interrupt handling -> TODO
      */
     void processInterruptData();
 
