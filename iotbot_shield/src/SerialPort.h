@@ -1,62 +1,197 @@
 #ifndef _SERIAL_PORT_H_
 #define _SERIAL_PORT_H_
 
-#include <sys/types.h>
-#include <termios.h>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <utility>
+#include <iterator>
+#include <cstring>
+
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "mraa/common.hpp"
+#include "mraa/uart.hpp"
 
 
-struct ReturnData
-{
-	float rpmReturn[4];
-	float voltage;
-};
+namespace iotbot { namespace serial {
+
+
+#include "uartProtocol.h"
 
 
 /**
- * @class SerialPort
- * @brief Serial interfacing class (UART).
- * @author Stefan May
- * @date 10.10.2015
+ * @class CSerialPort
+ * @brief Serial interfacing class (UART)
+ * @author Stefan May, Manuel Kreutz
+ * @date 17.05.2021
  */
-class SerialPort
+class CSerialPort
 {
-public:
+private:
+    mraa::Uart * uart_;
+    bool isPortOpened_;
+    volatile bool interruptDetected_;
 
-  /**
-   * Constructor
-   * @param[in] comPort device file link
-   * @param[in] baud baud rate
-   */
-	SerialPort(const char* comPort, const speed_t baud);
+    typedef struct SerialParam
+    {
+        std::pair<bool, std::string> port;
+        std::pair<bool, unsigned int> baudrate;
+        std::pair<bool, unsigned int> dataBits;
+        std::pair<bool, unsigned int> stopBits;
+        std::pair<bool, std::string> parity;
+        std::pair<bool, std::string> flowControl;
+        std::pair<bool, std::string> interrupt;
+    } SSerialParams;
 
-	/**
-	 * Destructor
-	 */
-	~SerialPort();
-
-	/**
-	 * Send data
-	 * @param[in] msg send buffer
-	 * @param[in] len length of send buffer
-	 * @return bytes actually written
-	 */
-	bool send(float rpm[4]);
-
-	/**
-	 * Receive data
-	 * @param[out] msg receive buffer, ensure that the buffer it at least the size of len
-	 * @param[in] bytes to read
-	 * @return true: received bytes==len, false: received bytes!=len
-	 */
-	//bool receive(std::shared_ptr<ReturnData> returnDataObj);
-	bool receive(ReturnData& returnDataObj);
+    SSerialParams params_;  // parameter holder for setup file handling
 
 private:
-	int _fd;
+    /**
+     * read UART parameters from a file to the parameter struct
+     * @param[in] filePath path to parameter file e.g. /path/to/serial_port_params.txt
+     * @return true: read successfully, false: error occured
+     */
+    bool readParamFile(const std::string & filePath);
+    
+    /**
+     * initialize the parameter struct with "no data read"
+     */
+    void initParamStruct();
 
+    /**
+     * set the baudrate of the internal UART port
+     * @param[in] baudrate a valid baudrate e.g. 115200
+     * @return true: set up successfully, false: error occured
+     */
+    bool setBaudrate(const unsigned int baudrate);
+
+    /**
+     * set the mode of the internal UART port
+     * @param[in] dataBits a valid amount of data bits e.g. 8
+     * @param[in] parity the parity mode
+     * @param[in] stopBits a valid amount of stop bits e.g. 1
+     * @return true: set up successfully, false: error occured
+     */
+    bool setMode(const unsigned int dataBits, const mraa::UartParity parity, const unsigned int stopBits);
+
+    /**
+     * set the flow control of the internal UART port
+     * @param[in] xOnOff use of XON / XOFF as flow control
+     * @param[in] rtsCts use of RTS / CTS as flow control
+     * @return true: set up successfully, false: error occured
+     */
+    bool setFlowControl(const bool xOnOff, const bool rtsCts);
+
+    /**
+     * set up the interrupt stuff -> TODO
+     */
+    void setInterrupt();
+
+    /**
+     * interrupt service routine
+     */
+    void irq_handler();
+
+    /**
+     * process the interrupt handling
+     */
+    void processInterruptData();
+
+    /**
+     * fill the tx buffer with the given data in order of the specified protocol
+     * !!! changes in the UART request protocol have to be corrected in this function !!!
+     * @param[in] data the data struct storing all values to send
+     */
+    void fillTxBuffer(const SSerialRequestData & data);
+
+    /**
+     * fill the data struct with the data of the received rx buffer in order of the specified protocol
+     * !!! changes in the UART response protocol have to be corrected in this function !!!
+     * @param[out] data the structured receiving data
+     */
+    void fillDataFromRxBuffer(SSerialResponseData & data);
+
+    /**
+     * copy a value to the tx buffer with a specified offset
+     * @param[in] value the value to copy to the tx buffer
+     * @param[in] offset specifies the place in the tx buffer to be filled
+     */
+    template <typename T>
+    void setTxBufferWith(const T & value, const unsigned int offset);
+
+    /**
+     * copy a specified value from the rx buffer to the given value
+     * @param[out] value the value that will be filled
+     * @param[in] offset specifies the place in the rx buffer to get the data from
+     */
+    template <typename T>
+    void getValueFromRxBuffer(T & value, const unsigned int offset);
+
+public:
+    /**
+     * constructor
+     */
+    CSerialPort();
+
+    /**
+     * destructor
+     */
+    ~CSerialPort();
+
+    CSerialPort(const CSerialPort &) = delete;              // no copy constructor
+    CSerialPort &operator=(const CSerialPort &) = delete;   // no copy assignment operator
+
+    CSerialPort(CSerialPort &&) = default;              // move constructor -> let the compiler create the constructor by default
+    CSerialPort &operator=(CSerialPort &&) = default;   // move via assignment operator
+
+    /**
+     * open the internal port using default serial port parameters
+     * @param[in] fileName the port file of the actual linux system e.g. /dev/ttyS1
+     * @param[in] baudrate the speed of transmittion in bits/s
+     * @param[in] useInterrupt handle data receive via interrupts
+     * @return true: if port was opened successfully, false: if an error occured
+     */
+    bool openPort(const std::string & fileName, const unsigned int baudrate, const bool useInterrupt);
+
+    /**
+     * open the internal port using a parameter file 
+     * @param[in] paramFilePath the parameter file to read e.g. /path/to/serial_port_params.txt
+     * @return true: if port was opened successfully, false: if an error occured
+     */
+    bool openPort(const std::string & paramFilePath);
+
+    /**
+     * close the internal port
+     */
+    void closePort();
+
+    /**
+     * check if the internal port is opened 
+     * @return true: if port was opened successfully, false: if the port is not opened
+     */
+    bool isPortOpened() const;
+
+    /**
+     * send data over specified port
+     * @param[in] data the structured data to send
+     * @return true: sent bytes = len, false: sent bytes != len
+     */
+    bool send(const SSerialRequestData & data);
+
+    /**
+     * receive data over specified port
+     * @param[out] data the structured receiving data
+     * @param[in] waitTimeoutInMilliseconds the max. time in milliseconds to wait for new data
+     * @return true: received bytes = len, false: received bytes != len
+     */
+    bool receive(SSerialResponseData & data, const unsigned int waitTimeoutInMilliseconds);
 };
 
 
+}} // namespace iotbot } namespace serial
 
 
-#endif /* _SERIAL_PORT_H_ */
+#endif // _SERIAL_PORT_H_

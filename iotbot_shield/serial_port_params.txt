@@ -1,0 +1,22 @@
+# usage: [variable] [value]
+
+# valid linux com ports: /dev/ttyS1 ... /dev/ttyS4
+com_port	/dev/ttyS1
+
+# valid linux baud rates: 9600, 19200, 38400, 57600, 115200
+baud_rate	115200
+
+# valid linux data bits: 5, 6, 7, 8
+data_bits	8
+
+# valid linux stop bits: 1, 2
+stop_bits	1
+
+# valid linux parity modes: NONE, ODD, EVEN
+parity_mode	NONE
+
+# valid linux flow controls: NONE, RTS_CTS, XON_XOFF
+flow_control	NONE
+
+# enable data receive via interrupt: YES, NO
+use_interrupt	NO

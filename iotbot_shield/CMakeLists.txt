@@ -20,21 +20,25 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(iotbot_msgs)
+# find_package(iotbot_msgs)
 
+# add the mraa lib directory to the workspace to build -> has to be cloned first from https://github.com/eclipse/mraa
+#add_subdirectory(mraa-lib)
+#include_directories(mraa-lib/api)
 
+add_executable(iotbot_shield_node src/SerialPort.cpp) # src/iotbot_shield_node.cpp)
 
-add_executable(iotbot_shield_node src/iotbot_shield_node.cpp src/SerialPort.cpp)
-ament_target_dependencies(iotbot_shield_node rclcpp std_msgs geometry_msgs iotbot_msgs)
+ament_target_dependencies(iotbot_shield_node rclcpp std_msgs geometry_msgs) # iotbot_msgs)
+
+#target_link_libraries(iotbot_shield_node mraa) # additionaly link with mraa library
+
 target_include_directories(iotbot_shield_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
 install(TARGETS
   iotbot_shield_node
-  
   DESTINATION lib/${PROJECT_NAME})
-
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
