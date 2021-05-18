@@ -175,17 +175,17 @@ public:
     bool isPortOpened() const;
 
     /**
-     * send data over specified port
+     * send data over specified port -> has to be opened before
      * @param[in] data the structured data to send
-     * @return true: sent bytes = len, false: sent bytes != len
+     * @return true: successfully written to UART, false: an error occured
      */
     bool send(const SSerialRequestData & data);
 
     /**
-     * receive data over specified port
+     * receive data over specified port -> has to be opened before
      * @param[out] data the structured receiving data
      * @param[in] waitTimeoutInMilliseconds the max. time in milliseconds to wait for new data
-     * @return true: received bytes = len, false: received bytes != len
+     * @return true: successfully read from UART, false: an error occured
      */
     bool receive(SSerialResponseData & data, const unsigned int waitTimeoutInMilliseconds);
 };
