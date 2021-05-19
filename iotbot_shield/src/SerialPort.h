@@ -92,21 +92,6 @@ private:
     bool setFlowControl(const bool xOnOff, const bool rtsCts);
 
     /**
-     * set up the interrupt stuff -> TODO
-     */
-    void setInterrupt();
-
-    /**
-     * interrupt service routine -> TODO
-     */
-    void irq_handler();
-
-    /**
-     * process the interrupt handling -> TODO
-     */
-    void processInterruptData();
-
-    /**
      * fill the tx buffer with the given data in order of the specified protocol
      * !!! changes in the UART request protocol have to be corrected in this function !!!
      * @param[in] data the data struct storing all values to send
@@ -156,7 +141,7 @@ public:
     /**
      * open the internal port using default serial port parameters
      * @param[in] fileName the port file of the actual linux system e.g. /dev/ttyS1
-     * @param[in] baudrate the speed of transmittion in bits/s
+     * @param[in] baudrate the speed of transmittion in bits/s e.g. 115200
      * @param[in] useInterrupt handle data receive via interrupts
      * @return true: if port was opened successfully, false: if an error occured or the port was already opened
      */

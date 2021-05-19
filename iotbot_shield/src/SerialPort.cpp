@@ -74,7 +74,6 @@ bool CSerialPort::openPort(const std::string & paramFilePath)
 
     initParamStruct();
 
-    // ******************************************** input parameter file ********************************************
     if (false == readParamFile(paramFilePath))
     {
         return false;
@@ -396,33 +395,6 @@ bool CSerialPort::setFlowControl(const bool xOnOff, const bool rtsCts)
     }
 
     return true;
-}
-
-
-
-void CSerialPort::setInterrupt()
-{
-    // TODO !!!
-}
-
-
-
-void CSerialPort::irq_handler()
-{
-    // std::cout << "CSerialPort::irq_handler() -> interrupt detected" << std::endl;
-
-    // TODO !!!
-
-    interruptDetected_ = true;
-}
-
-
-
-void CSerialPort::processInterruptData()
-{
-    // TODO !!!
-
-    interruptDetected_ = false;
 }
 
 
