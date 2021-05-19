@@ -34,7 +34,7 @@ class CSerialPort
 private:
 	/**
      * SSerialParams
-	 * first:  is value set (true/false)
+	 * first:  is value set via parameter file
 	 * second: value
      */
     typedef struct
@@ -48,10 +48,8 @@ private:
     } SSerialParams;
 
     SSerialParams params_;              // parameter holder for setup file handling
-    std::unique_ptr<mraa::Uart> uart_;  // the underlying uart interface
-
+    std::unique_ptr<mraa::Uart> uart_;  // the underlying UART interface
     bool isPortOpened_;                 // specifies if the UART port is open or not
-    volatile bool interruptDetected_;   // specifies if a interrupt was detected or not
 
 private:
     /**
@@ -105,7 +103,7 @@ private:
     void fillDataFromRxBuffer(SSerialResponseData & data);
 
     /**
-     * copy a value to the tx buffer with a specified offset
+     * copy a value to the tx buffer at a specified buffer offset
      * @param[in] value the value to copy to the tx buffer
      * @param[in] offset specifies the place in the tx buffer to be filled
      */
@@ -113,7 +111,7 @@ private:
     void setTxBufferWith(const T & value, const unsigned int offset);
 
     /**
-     * copy a specified value from the rx buffer to the given value
+     * copy a via offset specified value from the rx buffer to the given value
      * @param[out] value the value that will be filled
      * @param[in] offset specifies the place in the rx buffer to get the data from
      */
@@ -174,7 +172,7 @@ public:
     /**
      * receive data over specified port -> has to be opened before
      * @param[out] data the structured receiving data
-     * @param[in] waitTimeoutInMilliseconds the max. time in milliseconds to wait for new data on port
+     * @param[in] waitTimeoutInMilliseconds the max. time in milliseconds to wait for new data on port (0 = no waiting)
      * @return true: successfully read from UART, false: an error occured
      */
     bool receive(SSerialResponseData & data, const unsigned int waitTimeoutInMilliseconds);

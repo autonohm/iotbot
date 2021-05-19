@@ -4,7 +4,7 @@
 namespace iotbot { namespace serial {
 
 
-CSerialPort::CSerialPort() : isPortOpened_(false), interruptDetected_(false)
+CSerialPort::CSerialPort() : isPortOpened_(false)
 {
 
 }
@@ -245,7 +245,7 @@ bool CSerialPort::readParamFile(const std::string & filePath)
 {
     std::ifstream paramFile(filePath);
 
-    if (paramFile)
+    if (true == paramFile.is_open())
     {
         std::cout << "iotbot::serial::CSerialPort::readParamFile() -> read parameter file: " << filePath << std::endl;
 
@@ -337,7 +337,6 @@ void CSerialPort::initParamStruct()
     params_.stopBits.first = false;
     params_.parity.first = false;
     params_.flowControl.first = false;
-    params_.interrupt.first = false;
 }
 
 
