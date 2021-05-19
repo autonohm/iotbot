@@ -51,11 +51,6 @@ bool CSerialPort::openPort(const std::string & fileName, const unsigned int baud
         return false;
     }
 
-    if (true == useInterrupt)
-    {
-        // setInterrupt();
-    }
-
     std::cout << "iotbot::serial::CSerialPort::openPort() -> " << fileName << " (baudrate: " << baudrate << ", mode: 8N1) has been successfully opened" << std::endl;
 
     isPortOpened_ = true;
@@ -238,12 +233,6 @@ bool CSerialPort::openPort(const std::string & paramFilePath)
         return false;
     }
 
-    // ******************************************** interrupt ********************************************
-    if ("YES" == params_.interrupt.second)
-    {
-        // setInterrupt();
-    }
-
     std::cout << "iotbot::serial::CSerialPort::openPort() -> " << port << " has been successfully opened" << std::endl;
 
     isPortOpened_ = true;
@@ -305,13 +294,6 @@ bool CSerialPort::readParamFile(const std::string & filePath)
                 params_.flowControl.second = *it;
 
                 std::cout << "iotbot::serial::CSerialPort::readParamFile() -> setup flow_control: " << params_.flowControl.second << std::endl;
-            }
-            else if ("use_interrupt" == lastParamHolder)
-            {
-                params_.interrupt.first = true;
-                params_.interrupt.second = *it;
-
-                std::cout << "iotbot::serial::CSerialPort::readParamFile() -> setup use_interrupt: " << params_.interrupt.second << std::endl;
             }
 
             lastParamHolder = *it;

@@ -17,6 +17,3 @@ parity_mode	NONE
 
 # valid linux flow controls: NONE, RTS_CTS, XON_XOFF
 flow_control	NONE
-
-# enable data receive via interrupt: YES, NO
-use_interrupt	NO

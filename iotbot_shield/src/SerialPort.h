@@ -45,7 +45,6 @@ private:
         std::pair<bool, unsigned int> stopBits;
         std::pair<bool, std::string> parity;
         std::pair<bool, std::string> flowControl;
-        std::pair<bool, std::string> interrupt;
     } SSerialParams;
 
     SSerialParams params_;              // parameter holder for setup file handling
