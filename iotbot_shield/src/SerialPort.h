@@ -7,6 +7,7 @@
 #include <utility>
 #include <iterator>
 #include <cstring>
+#include <memory>
 
 #include <signal.h>
 #include <stdlib.h>
@@ -31,10 +32,16 @@ namespace iotbot { namespace serial {
 class CSerialPort
 {
 private:
-    mraa::Uart * uart_;
+    std::unique_ptr<mraa::Uart> uart_;
+
     bool isPortOpened_;
     volatile bool interruptDetected_;
 
+	/**
+     * SSerialParams
+	 * first:  is value set (true/false)
+	 * second: value
+     */
     typedef struct
     {
         std::pair<bool, std::string> port;
@@ -52,7 +59,7 @@ private:
     /**
      * read UART parameters from a file to the parameter struct
      * @param[in] filePath path to parameter file e.g. /path/to/serial_port_params.txt
-     * @return true: read successfully, false: error occured
+     * @return true: read was successful, false: error occured
      */
     bool readParamFile(const std::string & filePath);
     
@@ -64,7 +71,7 @@ private:
     /**
      * set the baudrate of the internal UART port
      * @param[in] baudrate a valid baudrate e.g. 115200
-     * @return true: set up successfully, false: error occured
+     * @return true: set up was successful, false: error occured
      */
     bool setBaudrate(const unsigned int baudrate);
 
@@ -73,7 +80,7 @@ private:
      * @param[in] dataBits a valid amount of data bits e.g. 8
      * @param[in] parity the parity mode
      * @param[in] stopBits a valid amount of stop bits e.g. 1
-     * @return true: set up successfully, false: error occured
+     * @return true: set up was successful, false: error occured
      */
     bool setMode(const unsigned int dataBits, const mraa::UartParity parity, const unsigned int stopBits);
 
@@ -81,7 +88,7 @@ private:
      * set the flow control of the internal UART port
      * @param[in] xOnOff use of XON / XOFF as flow control
      * @param[in] rtsCts use of RTS / CTS as flow control
-     * @return true: set up successfully, false: error occured
+     * @return true: set up was successful, false: error occured
      */
     bool setFlowControl(const bool xOnOff, const bool rtsCts);
 
@@ -152,14 +159,14 @@ public:
      * @param[in] fileName the port file of the actual linux system e.g. /dev/ttyS1
      * @param[in] baudrate the speed of transmittion in bits/s
      * @param[in] useInterrupt handle data receive via interrupts
-     * @return true: if port was opened successfully, false: if an error occured
+     * @return true: if port was opened successfully, false: if an error occured or the port was already opened
      */
     bool openPort(const std::string & fileName, const unsigned int baudrate, const bool useInterrupt);
 
     /**
      * open the internal port using a parameter file 
      * @param[in] paramFilePath the parameter file to read e.g. /path/to/serial_port_params.txt
-     * @return true: if port was opened successfully, false: if an error occured
+     * @return true: if port was opened successfully, false: if an error occured or the port was already opened
      */
     bool openPort(const std::string & paramFilePath);
 
@@ -184,7 +191,7 @@ public:
     /**
      * receive data over specified port -> has to be opened before
      * @param[out] data the structured receiving data
-     * @param[in] waitTimeoutInMilliseconds the max. time in milliseconds to wait for new data
+     * @param[in] waitTimeoutInMilliseconds the max. time in milliseconds to wait for new data on port
      * @return true: successfully read from UART, false: an error occured
      */
     bool receive(SSerialResponseData & data, const unsigned int waitTimeoutInMilliseconds);

@@ -13,16 +13,22 @@ CSerialPort::CSerialPort() : isPortOpened_(false), interruptDetected_(false)
 
 CSerialPort::~CSerialPort()
 {
-    delete uart_;
+    
 }
 
 
 
 bool CSerialPort::openPort(const std::string & fileName, const unsigned int baudrate, const bool useInterrupt)
 {
+    if (true == isPortOpened_)
+    {
+        std::cout << "iotbot::serial::CSerialPort::openPort() -> port is already opened, close it first with closePort()" << std::endl;
+        return false;
+    }
+    
     try
     {
-        uart_ = new mraa::Uart(fileName);
+        uart_ = std::make_unique<mraa::Uart>(fileName);
     }
     catch (std::exception& e)
     {
@@ -60,7 +66,12 @@ bool CSerialPort::openPort(const std::string & fileName, const unsigned int baud
 
 bool CSerialPort::openPort(const std::string & paramFilePath)
 {
-    isPortOpened_ = false;
+    if (true == isPortOpened_)
+    {
+        std::cout << "iotbot::serial::CSerialPort::openPort() -> port is already opened, close it first with closePort()" << std::endl;
+        return false;
+    }
+
     initParamStruct();
 
     // ******************************************** input parameter file ********************************************
@@ -70,9 +81,20 @@ bool CSerialPort::openPort(const std::string & paramFilePath)
     }
 
     // ******************************************** port ********************************************
+    std::string port = "/dev/ttyS1";
+
+	if (true == params_.port.first)
+    {
+        port = params_.port.second;
+    }
+    else
+    {
+        std::cout << "iotbot::serial::CSerialPort::openPort() -> no port device name in parameter file specified (trying default value: " << port << ")" << std::endl;
+    }
+
     try
     {
-        uart_ = new mraa::Uart(params_.port.second);
+        uart_ = std::make_unique<mraa::Uart>(port);
     }
     catch (std::exception & e)
     {
@@ -81,109 +103,140 @@ bool CSerialPort::openPort(const std::string & paramFilePath)
     }
 
     // ******************************************** baudrate ********************************************
+    unsigned int baudrate = 115200;
+    
     if (true == params_.baudrate.first)
     {
-        if (false == setBaudrate(params_.baudrate.second))
+        baudrate = params_.baudrate.second;
+    }
+    else
+    {
+        std::cout << "iotbot::serial::CSerialPort::openPort() -> no baudrate in parameter file specified (using default value: " << baudrate << ")" << std::endl;
+    }
+
+    if (false == setBaudrate(baudrate))
+    {
+        return false;
+    }
+
+    // ******************************************** data bits ********************************************
+    unsigned int dataBits = 8;
+
+	if (true == params_.dataBits.first)
+    {
+        switch (params_.dataBits.second)
         {
-            return false;
+        case 5:
+            dataBits = 5;
+            break;
+        case 6:
+            dataBits = 6;
+            break;
+        case 7:
+            dataBits = 7;
+            break;
+        case 8:
+            dataBits = 8;
+            break;
+        default:
+            std::cout << "iotbot::serial::CSerialPort::openPort() -> no valid data bits in parameter file specified (using default value: " << dataBits << ")" << std::endl;
         }
     }
     else
     {
-        std::cout << "iotbot::serial::CSerialPort::openPort() -> no baudrate in parameter file specified (using default values)" << std::endl;
-
-        if (false == setBaudrate(115200))
-        {
-            return false;
-        }
+        std::cout << "iotbot::serial::CSerialPort::openPort() -> no data bits in parameter file specified (using default value: " << dataBits << ")" << std::endl;
     }
 
     // ******************************************** parity ********************************************
-    if (true == params_.parity.first)
+	mraa::UartParity parity = mraa::UART_PARITY_NONE;
+
+	if (true == params_.parity.first)
     {
         if ("NONE" == params_.parity.second)
         {
-            if (false == setMode(params_.dataBits.second, mraa::UART_PARITY_NONE, params_.stopBits.second))
-            {
-                return false;
-            }
+            parity = mraa::UART_PARITY_NONE;
         }
         else if ("EVEN" == params_.parity.second)
         {
-            if (false == setMode(params_.dataBits.second, mraa::UART_PARITY_EVEN, params_.stopBits.second))
-            {
-                return false;
-            }
+            parity = mraa::UART_PARITY_EVEN;
         }
         else if ("ODD" == params_.parity.second)
         {
-            if (false == setMode(params_.dataBits.second, mraa::UART_PARITY_ODD, params_.stopBits.second))
-            {
-                return false;
-            }
+            parity = mraa::UART_PARITY_ODD;
         }
         else
         {
-            std::cout << "iotbot::serial::CSerialPort::setParity() -> no valid parity mode in parameter file specified (using default values)" << std::endl;
-            
-            if (false == setMode(params_.dataBits.second, mraa::UART_PARITY_NONE , params_.stopBits.second))
-            {
-                return false;
-            }
+            std::cout << "iotbot::serial::CSerialPort::openPort() -> no valid parity mode in parameter file specified (using default value: no parity)" << std::endl;
         }
     }
     else
     {
-        std::cout << "iotbot::serial::CSerialPort::openPort() -> no parity in parameter file specified (using default values)" << std::endl;
+        std::cout << "iotbot::serial::CSerialPort::openPort() -> no parity in parameter file specified (using default value: no parity)" << std::endl;
+    }
 
-        if (false == setMode(8, mraa::UART_PARITY_NONE , 1))
+    // ******************************************** stop bits ********************************************
+	unsigned int stopBits = 1;
+
+    if (true == params_.stopBits.first)
+    {
+        if (1 == params_.stopBits.second)
         {
-            return false;
+            stopBits = 1;
         }
+        else if (2 == params_.stopBits.second)
+        {
+            stopBits = 2;
+        }
+        else
+        {
+            std::cout << "iotbot::serial::CSerialPort::openPort() -> no valid stop bits mode in parameter file specified (using default value: " << stopBits << ")" << std::endl;
+        }
+    }
+    else
+    {
+        std::cout << "iotbot::serial::CSerialPort::openPort() -> no stop bits in parameter file specified (using default value: " << stopBits << ")" << std::endl;
+    }
+
+    // ******************************************** set UART mode with data bits, parity, stop bits ********************************************
+    if (false == setMode(dataBits, parity, stopBits))
+    {
+        return false;
     }
     
     // ******************************************** flow control ********************************************
-   if (true == params_.flowControl.first)
+    bool xonXoff = false;
+    bool rtsCts = false;
+
+    if (true == params_.flowControl.first)
     {
         if ("NONE" == params_.flowControl.second)
         {
-            if (false == setFlowControl(false, false))
-            {
-                return false;
-            }
-        }
-        else if ("RTS_CTS" == params_.flowControl.second)
-        {
-            if (false == setFlowControl(false, true))
-            {
-                return false;
-            }
+            xonXoff = false;
+            rtsCts = false;
         }
         else if ("XON_XOFF" == params_.flowControl.second)
         {
-            if (false == setFlowControl(true, false))
-            {
-                return false;
-            }
+            xonXoff = true;
+            rtsCts = false;
+        }
+        else if ("RTS_CTS" == params_.flowControl.second)
+        {
+            xonXoff = false;
+            rtsCts = true;
         }
         else
         {
-            std::cout << "iotbot::serial::CSerialPort::setFlowControl() -> no valid flow control mode in parameter file specified (using default values)" << std::endl;
-            
-            if (false == setFlowControl(false, false))
-            {
-                return false;
-            }
+            std::cout << "iotbot::serial::CSerialPort::openPort() -> no valid flow control mode in parameter file specified (using default values: XON/XOFF = off, RTS/CTS = off)" << std::endl;
         }
     }
     else
     {
-        std::cout << "iotbot::serial::CSerialPort::openPort() -> no flow control in parameter file specified (using default values)" << std::endl;
+        std::cout << "iotbot::serial::CSerialPort::openPort() -> no flow control in parameter file specified (using default values: XON/XOFF = off, RTS/CTS = off)" << std::endl;
+    }
 
-        if (false == setFlowControl(false, false))
-        {
-            return false;
-        }
+    if (false == setFlowControl(xonXoff, rtsCts))
+    {
+        return false;
     }
 
     // ******************************************** interrupt ********************************************
@@ -192,7 +245,7 @@ bool CSerialPort::openPort(const std::string & paramFilePath)
         // setInterrupt();
     }
 
-    std::cout << "iotbot::serial::CSerialPort::openPort() -> " << params_.port.second << " has been successfully opened" << std::endl;
+    std::cout << "iotbot::serial::CSerialPort::openPort() -> " << port << " has been successfully opened" << std::endl;
 
     isPortOpened_ = true;
     return true;
@@ -206,7 +259,7 @@ bool CSerialPort::readParamFile(const std::string & filePath)
 
     if (paramFile)
     {
-        std::cout << "iotbot::serial::CSerialPort::openPort() -> read parameter file: " << filePath << std::endl;
+        std::cout << "iotbot::serial::CSerialPort::readParamFile() -> read parameter file: " << filePath << std::endl;
 
         std::string lastParamHolder = "";
 
@@ -217,49 +270,49 @@ bool CSerialPort::readParamFile(const std::string & filePath)
                 params_.port.first = true;
                 params_.port.second = *it;
 
-                std::cout << "iotbot::serial::CSerialPort::openPort() -> setup com_port: " << params_.port.second << std::endl;
+                std::cout << "iotbot::serial::CSerialPort::readParamFile() -> setup com_port: " << params_.port.second << std::endl;
             }
             else if ("baud_rate" == lastParamHolder)
             {
                 params_.baudrate.first = true;
                 params_.baudrate.second = std::stoi(*it);
 
-                std::cout << "iotbot::serial::CSerialPort::openPort() -> setup baud_rate: " << params_.baudrate.second << std::endl;
+                std::cout << "iotbot::serial::CSerialPort::readParamFile() -> setup baud_rate: " << params_.baudrate.second << std::endl;
             }
             else if ("data_bits" == lastParamHolder)
             {
                 params_.dataBits.first = true;
                 params_.dataBits.second = std::stoi(*it);
 
-                std::cout << "iotbot::serial::CSerialPort::openPort() -> setup data_bits: " << params_.dataBits.second << std::endl;
+                std::cout << "iotbot::serial::CSerialPort::readParamFile() -> setup data_bits: " << params_.dataBits.second << std::endl;
             }
             else if ("stop_bits" == lastParamHolder)
             {
                 params_.stopBits.first = true;
                 params_.stopBits.second = std::stoi(*it);
 
-                std::cout << "iotbot::serial::CSerialPort::openPort() -> setup stop_bits: " << params_.stopBits.second << std::endl;
+                std::cout << "iotbot::serial::CSerialPort::readParamFile() -> setup stop_bits: " << params_.stopBits.second << std::endl;
             }
             else if ("parity_mode" == lastParamHolder)
             {
                 params_.parity.first = true;
                 params_.parity.second = *it;
 
-                std::cout << "iotbot::serial::CSerialPort::openPort() -> setup parity_mode: " << params_.parity.second << std::endl;
+                std::cout << "iotbot::serial::CSerialPort::readParamFile() -> setup parity_mode: " << params_.parity.second << std::endl;
             }
             else if ("flow_control" == lastParamHolder)
             {
                 params_.flowControl.first = true;
                 params_.flowControl.second = *it;
 
-                std::cout << "iotbot::serial::CSerialPort::openPort() -> setup flow_control: " << params_.flowControl.second << std::endl;
+                std::cout << "iotbot::serial::CSerialPort::readParamFile() -> setup flow_control: " << params_.flowControl.second << std::endl;
             }
             else if ("use_interrupt" == lastParamHolder)
             {
                 params_.interrupt.first = true;
                 params_.interrupt.second = *it;
 
-                std::cout << "iotbot::serial::CSerialPort::openPort() -> setup use_interrupt: " << params_.interrupt.second << std::endl;
+                std::cout << "iotbot::serial::CSerialPort::readParamFile() -> setup use_interrupt: " << params_.interrupt.second << std::endl;
             }
 
             lastParamHolder = *it;
@@ -269,7 +322,7 @@ bool CSerialPort::readParamFile(const std::string & filePath)
     }
     else
     {
-        std::cerr << "iotbot::serial::CSerialPort::openPort() -> could not open file: " << filePath << std::endl;
+        std::cerr << "iotbot::serial::CSerialPort::readParamFile() -> could not open file: " << filePath << std::endl;
         return false;
     }
 
@@ -282,7 +335,7 @@ void CSerialPort::closePort()
 {
     std::cout << "iotbot::serial::CSerialPort::closePort()" << std::endl;
 
-    delete uart_;
+    uart_.reset(nullptr);
     isPortOpened_ = false;
 }
 
@@ -380,7 +433,7 @@ bool CSerialPort::send(const SSerialRequestData & data)
     {
         fillTxBuffer(data);
 
-        unsigned int bytesWritten = uart_->write(reinterpret_cast<const char*>(&g_serialRequestBuffer[0]), SERIAL_REQUEST_BUFFER_LEN);
+        int bytesWritten = uart_->write(reinterpret_cast<const char*>(&g_serialRequestBuffer[0]), SERIAL_REQUEST_BUFFER_LEN);
 
         while (SERIAL_REQUEST_BUFFER_LEN != bytesWritten)
         {
@@ -416,7 +469,7 @@ bool CSerialPort::receive(SSerialResponseData & data, const unsigned int waitTim
             return false;
         }
 
-        unsigned int bytesRead = uart_->read(reinterpret_cast<char*>(&g_serialResponseBuffer[0]), SERIAL_RESPONSE_BUFFER_LEN);
+        int bytesRead = uart_->read(reinterpret_cast<char*>(&g_serialResponseBuffer[0]), SERIAL_RESPONSE_BUFFER_LEN);
 
         while (SERIAL_RESPONSE_BUFFER_LEN != bytesRead)
         {
