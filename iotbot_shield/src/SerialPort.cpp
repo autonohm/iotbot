@@ -30,7 +30,7 @@ bool CSerialPort::openPort(const std::string & fileName, const unsigned int baud
     {
         uart_ = std::make_unique<mraa::Uart>(fileName);
     }
-    catch (std::exception& e)
+    catch (std::exception & e)
     {
         std::cerr << "iotbot::serial::CSerialPort::openPort() -> error in constructor mraa::Uart(): " << e.what() << std::endl;
         return false;
@@ -445,7 +445,7 @@ bool CSerialPort::send(const SSerialRequestData & data)
 
             //std::cout << "iotbot::serial::CSerialPort::send() -> wrote " << bytesWritten << " bytes to UART" << std::endl;
             
-            bytesWritten = uart_->write(reinterpret_cast<const char*>(&g_serialRequestBuffer[bytesWritten]), SERIAL_REQUEST_BUFFER_LEN - bytesWritten);
+            bytesWritten += uart_->write(reinterpret_cast<const char*>(&g_serialRequestBuffer[bytesWritten]), SERIAL_REQUEST_BUFFER_LEN - bytesWritten);
         }
     }
     else
@@ -475,7 +475,7 @@ bool CSerialPort::receive(SSerialResponseData & data, const unsigned int waitTim
         {
             //std::cout << "iotbot::serial::CSerialPort::receive() -> read " << bytesRead << " bytes from UART" << std::endl;
             
-            bytesRead = uart_->read(reinterpret_cast<char*>(&g_serialResponseBuffer[bytesRead]), SERIAL_RESPONSE_BUFFER_LEN - bytesRead);
+            bytesRead += uart_->read(reinterpret_cast<char*>(&g_serialResponseBuffer[bytesRead]), SERIAL_RESPONSE_BUFFER_LEN - bytesRead);
         }
         
         fillDataFromRxBuffer(data);
