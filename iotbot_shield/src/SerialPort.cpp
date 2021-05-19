@@ -586,4 +586,4 @@ void CSerialPort::getValueFromRxBuffer(T & value, const unsigned int offset)
 }
 
 
-}} // namespace iotbot } namespace serial
+}} // namespace iotbot { namespace serial {

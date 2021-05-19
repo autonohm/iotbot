@@ -32,11 +32,6 @@ namespace iotbot { namespace serial {
 class CSerialPort
 {
 private:
-    std::unique_ptr<mraa::Uart> uart_;
-
-    bool isPortOpened_;
-    volatile bool interruptDetected_;
-
 	/**
      * SSerialParams
 	 * first:  is value set (true/false)
@@ -53,7 +48,11 @@ private:
         std::pair<bool, std::string> interrupt;
     } SSerialParams;
 
-    SSerialParams params_;  // parameter holder for setup file handling
+    SSerialParams params_;              // parameter holder for setup file handling
+    std::unique_ptr<mraa::Uart> uart_;  // the underlying uart interface
+
+    bool isPortOpened_;                 // specifies if the UART port is open or not
+    volatile bool interruptDetected_;   // specifies if a interrupt was detected or not
 
 private:
     /**
@@ -198,7 +197,7 @@ public:
 };
 
 
-}} // namespace iotbot } namespace serial
+}} // namespace iotbot { namespace serial {
 
 
 #endif // _SERIAL_PORT_H_
