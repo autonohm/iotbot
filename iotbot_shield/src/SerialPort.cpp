@@ -18,7 +18,7 @@ CSerialPort::~CSerialPort()
 
 
 
-bool CSerialPort::openPort(const std::string & fileName, const unsigned int baudrate, const bool useInterrupt)
+bool CSerialPort::openPort(const std::string & fileName, const unsigned int baudrate)
 {
     if (true == isPortOpened_)
     {
@@ -56,7 +56,7 @@ bool CSerialPort::openPort(const std::string & fileName, const unsigned int baud
         // setInterrupt();
     }
 
-    std::cout << "iotbot::serial::CSerialPort::openPort() -> " << fileName << " (baudrate: " << baudrate << ") has been successfully opened" << std::endl;
+    std::cout << "iotbot::serial::CSerialPort::openPort() -> " << fileName << " (baudrate: " << baudrate << ", mode: 8N1) has been successfully opened" << std::endl;
 
     isPortOpened_ = true;
     return true;

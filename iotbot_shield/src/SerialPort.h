@@ -145,7 +145,7 @@ public:
      * @param[in] useInterrupt handle data receive via interrupts
      * @return true: if port was opened successfully, false: if an error occured or the port was already opened
      */
-    bool openPort(const std::string & fileName, const unsigned int baudrate, const bool useInterrupt);
+    bool openPort(const std::string & fileName, const unsigned int baudrate);
 
     /**
      * open the internal port using a parameter file 
