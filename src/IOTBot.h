@@ -76,11 +76,11 @@ struct ChassisParams
 };
 
 /**
- * @class Main class for IotBot
+ * @class Main class for IOTBot
  * @author Stefan May
  * @date 08.05.2021
  */
-class IotBot
+class IOTBot
 {
 public:
 
@@ -89,12 +89,12 @@ public:
    * @params[in] chassisParams chassis parameters, including the map for assigning channels to position of wheels
    * @params[in] motorParams motor parameters
    */
-  IotBot(ChassisParams &chassisParams, MotorParams &motorParams);
+  IOTBot(ChassisParams &chassisParams, MotorParams &motorParams);
 
   /**
    * Destructor
    */
-  ~IotBot();
+  ~IOTBot();
 
   /**
    * ROS main loop (blocking method)
@@ -151,6 +151,9 @@ private:
 
   // conversion from revolutions per minute [RPM] to [rad/s]
   float                  _rpm2rad;
+
+  // RGB values of lighting system
+  unsigned char _rgb[3];
 
   // time elapsed since last call
   ros::Time              _lastCmd;

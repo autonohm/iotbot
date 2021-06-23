@@ -141,13 +141,14 @@ const std::vector<float> IOTShield::getRPM()
    return _rpm;
 }
 
-bool IOTShield::setLighting(eLighting light)
+bool IOTShield::setLighting(eLighting light, unsigned char rgb[3])
 {
    _txBuf[0] = 0xFF;
    _txBuf[1] = light;
-	for(int i=2; i<10; i++)
-	   _txBuf[i] = i;
-	_txBuf[10] = 0xEE;
+   _txBuf[2] = rgb[0];
+   _txBuf[3] = rgb[1];
+   _txBuf[4] = rgb[2];
+   _txBuf[10] = 0xEE;
    sendReceive();
    return 0;
 }
@@ -157,9 +158,9 @@ bool IOTShield::setAUX1(bool on)
    _txBuf[0] = 0xFF;
    _txBuf[1] = CMD_AUX1;
    _txBuf[2] = (on ? 0x01 : 0x00);
-	for(int i=3; i<10; i++)
-	   _txBuf[i] = 0;
-	_txBuf[10] = 0xEE;
+   for(int i=3; i<10; i++)
+      _txBuf[i] = 0;
+   _txBuf[10] = 0xEE;
    sendReceive();
    return 0;
 }
@@ -169,9 +170,9 @@ bool IOTShield::setAUX2(bool on)
    _txBuf[0] = 0xFF;
    _txBuf[1] = CMD_AUX2;
    _txBuf[2] = on;
-	for(int i=3; i<10; i++)
-	   _txBuf[i] = 0;
-	_txBuf[10] = 0xEE;
+   for(int i=3; i<10; i++)
+      _txBuf[i] = 0;
+   _txBuf[10] = 0xEE;
    sendReceive();
    return 0;
 }
@@ -194,13 +195,11 @@ void IOTShield::sendReceive()
     do
     {
        ::gettimeofday(&clock, 0);
-	    now = static_cast<double>(clock.tv_sec) + static_cast<double>(clock.tv_usec) * 1.0e-6;
+       now = static_cast<double>(clock.tv_sec) + static_cast<double>(clock.tv_usec) * 1.0e-6;
     }while((now - _timeCom) < 0.008);
     _timeCom = now;
-
    _uart->write((char*)_txBuf, 11);
    _uart->read(_rxBuf, 32);
-   
    for(int i=0; i<4; i++)
    {
       int16_t val  = _rxBuf[2*i+2] << 8;

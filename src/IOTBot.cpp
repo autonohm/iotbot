@@ -1,13 +1,13 @@
 #include <iostream>
 
-#include "IotBot.h"
+#include "IOTBot.h"
 
 using namespace std;
 
 namespace iotbot
 {
 
-IotBot::IotBot(ChassisParams &chassisParams, MotorParams &motorParams)
+IOTBot::IOTBot(ChassisParams &chassisParams, MotorParams &motorParams)
 {
   _motorParams  = new MotorParams(motorParams);
   _chassisParams = chassisParams;
@@ -22,7 +22,7 @@ IotBot::IotBot(ChassisParams &chassisParams, MotorParams &motorParams)
   _shield->setKp(0);
   _shield->setKi(20);
   _shield->setKd(0.0);
-  _shield->setLighting(iotbot::dimLight);
+  _shield->setLighting(iotbot::dimLight, _rgb);
 
   _rad2rpm          = (chassisParams.wheelBase+chassisParams.track)/chassisParams.wheelDiameter; // (lx+ly)/2 * 1/r
   _rpm2rad          = 1.0 / _rad2rpm;
@@ -31,25 +31,29 @@ IotBot::IotBot(ChassisParams &chassisParams, MotorParams &motorParams)
   _vMax             = motorParams.rpmMax * _rpm2ms;
   _omegaMax         = motorParams.rpmMax * _rpm2rad;
 
-  _joySub    = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &IotBot::joyCallback, this);
-  _velSub    = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 1, &IotBot::velocityCallback, this);
+  _joySub    = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &IOTBot::joyCallback, this);
+  _velSub    = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 1, &IOTBot::velocityCallback, this);
  
   _rpm[0] = 0.0;
   _rpm[1] = 0.0;
   _rpm[2] = 0.0;
   _rpm[3] = 0.0;
 
-  cout << "Initialized IotBot with vMax: " << _vMax << " m/s" << endl;
+  _rgb[0] = 0;
+  _rgb[1] = 0;
+  _rgb[2] = 0;
+
+  cout << "Initialized IOTBot with vMax: " << _vMax << " m/s" << endl;
 }
 
-IotBot::~IotBot()
+IOTBot::~IOTBot()
 {
-  _shield->setLighting(iotbot::pulsation);
+  _shield->setLighting(iotbot::pulsation, _rgb);
   delete _shield;
   delete _motorParams;
 }
 
-void IotBot::run()
+void IOTBot::run()
 {
   ros::Rate rate(100);
   _lastCmd = ros::Time::now();
@@ -72,6 +76,11 @@ void IotBot::run()
     if(lag)
     {
       ROS_WARN_STREAM("Lag detected ... deactivate motor control");
+      _rpm[0] = 0.0;
+      _rpm[1] = 0.0;
+      _rpm[2] = 0.0;
+      _rpm[3] = 0.0;
+      _shield->setRPM(_rpm);
       _shield->disable();
     }
     else
@@ -86,7 +95,7 @@ void IotBot::run()
   }
 }
 
-void IotBot::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
+void IOTBot::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
   // Assignment of joystick axes to motor commands
   float fwd      = joy->axes[1];            // Range of values [-1:1]
@@ -95,22 +104,60 @@ void IotBot::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
   float throttle = (joy->axes[3]+1.0)/2.0;  // Range of values [0:1]
 
   static int32_t btn0Prev   = joy->buttons[0];
+  static int32_t btn1Prev   = joy->buttons[1];
+  static int32_t btn2Prev   = joy->buttons[2];
+  static int32_t btn3Prev   = joy->buttons[3];
   static int32_t btn4Prev   = joy->buttons[4];
   static int32_t btn5Prev   = joy->buttons[5];
-  
+
   if(joy->buttons[0] && !btn0Prev)
-     _shield->setLighting(iotbot::beamLight);
+  {
+     _shield->setLighting(iotbot::beamLight, _rgb);
+  }
+  if(joy->buttons[1] && !btn1Prev)
+  {
+     _rgb[0] = 0xFF;
+     _rgb[1] = 0x88;
+     _rgb[2] = 0x00;
+     _shield->setLighting(iotbot::warningLight, _rgb);
+  }
+  if(joy->buttons[2] && !btn2Prev)
+  {
+     _rgb[0] = 0xFF;
+     _rgb[1] = 0x88;
+     _rgb[2] = 0x00;
+     _shield->setLighting(iotbot::flashLeft, _rgb);
+  }
+  if(joy->buttons[3] && !btn3Prev)
+  {
+     _rgb[0] = 0xFF;
+     _rgb[1] = 0x88;
+     _rgb[2] = 0x00;
+     _shield->setLighting(iotbot::flashRight, _rgb);
+  }
   if(joy->buttons[4] && !btn4Prev)
-     _shield->setLighting(iotbot::flashLeft);
+  {
+     _rgb[0] = 0x00;
+     _rgb[1] = 0x00;
+     _rgb[2] = 0xFF;
+     _shield->setLighting(iotbot::rotation, _rgb);
+  }
   if(joy->buttons[5] && !btn5Prev)
-     _shield->setLighting(iotbot::flashRight);
-     
+  {
+     _rgb[0] = 0xFF;
+     _rgb[1] = 0x00;
+     _rgb[2] = 0x00;
+     _shield->setLighting(iotbot::running, _rgb);
+  }
   btn0Prev   = joy->buttons[0];
+  btn1Prev   = joy->buttons[1];
+  btn2Prev   = joy->buttons[2];
+  btn3Prev   = joy->buttons[3];
   btn4Prev   = joy->buttons[4];
   btn5Prev   = joy->buttons[5];
-  
-  if(!btn0Prev && !btn4Prev && !btn5Prev)
-       _shield->setLighting(iotbot::dimLight);
+
+  if(!btn0Prev && !btn1Prev && !btn2Prev && !btn3Prev && !btn4Prev && !btn5Prev)
+     _shield->setLighting(iotbot::dimLight, _rgb);
   
   float vFwd  = throttle * fwd  * _vMax;
   float vLeft = throttle * left * _vMax;
@@ -119,17 +166,17 @@ void IotBot::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
   controlMotors(vFwd, vLeft, omega);
 }
 
-void IotBot::velocityCallback(const geometry_msgs::Twist::ConstPtr& cmd)
+void IOTBot::velocityCallback(const geometry_msgs::Twist::ConstPtr& cmd)
 {
   controlMotors(cmd->linear.x, cmd->linear.y, cmd->angular.z);
 }
 
-void IotBot::controlMotors(float vFwd, float vLeft, float omega)
+void IOTBot::controlMotors(float vFwd, float vLeft, float omega)
 {
   float rpmFwd   = vFwd  * _ms2rpm;
   float rpmLeft  = vLeft * _ms2rpm;
   float rpmOmega = omega * _rad2rpm;
-  rpmLeft = 0; // deactivated movement in y-direction
+  //rpmLeft = 0; // deactivated movement in y-direction
   //cout << "vFwd: " << vFwd << "m/s, vLeft: " << vLeft << "m/s, omega: " << omega << endl;
   //cout << "rpmFwd: " << rpmFwd << ", rpmLeft: " << rpmLeft << ", rpmOmega: " << rpmOmega << endl;
 

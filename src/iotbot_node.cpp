@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 
-#include "IotBot.h"
+#include "IOTBot.h"
 
 /**
  * @author Stefan May
@@ -20,15 +20,15 @@ int main(int argc, char** argv)
   nh.param("track",          chassisParams.track,               0.3f);
   nh.param("wheelBase",      chassisParams.wheelBase,           0.3f);
   nh.param("wheelDiameter",  chassisParams.wheelDiameter,       0.15f);
-  nh.param("chFrontLeft",    chassisParams.chFrontLeft,         3);
+  nh.param("chFrontLeft",    chassisParams.chFrontLeft,         2);
   nh.param("chFrontRight",   chassisParams.chFrontRight,        1);
-  nh.param("chRearLeft",     chassisParams.chRearLeft,          2);
+  nh.param("chRearLeft",     chassisParams.chRearLeft,          3);
   nh.param("chRearRight",    chassisParams.chRearRight,         0);
   nh.param("direction",      chassisParams.direction,           -1);
   nh.param("gearRatio",      motorParams.gearRatio,             70.f);
   nh.param("encoderRatio",   motorParams.encoderRatio,          64.f);
   nh.param("rpmMax",         motorParams.rpmMax,                140.f);
 
-  iotbot::IotBot robot(chassisParams, motorParams);
+  iotbot::IOTBot robot(chassisParams, motorParams);
   robot.run();
 }
