@@ -23,6 +23,7 @@ IOTBot::IOTBot(ChassisParams &chassisParams, MotorParams &motorParams)
   _shield->setKd(0.0);
   _shield->setLowPassSetPoint(0.02f);
   _shield->setLowPassEncoder(0.2f);
+
   _shield->setLighting(iotbot::dimLight, _rgb);
 
   _rad2rpm          = (chassisParams.wheelBase+chassisParams.track)/chassisParams.wheelDiameter; // (lx+ly)/2 * 1/r
@@ -31,7 +32,6 @@ IOTBot::IOTBot(ChassisParams &chassisParams, MotorParams &motorParams)
   _rpm2ms           = 1.0 / _ms2rpm;
   _vMax             = motorParams.rpmMax * _rpm2ms;
   _omegaMax         = motorParams.rpmMax * _rpm2rad;
-
   _subJoy     = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &IOTBot::joyCallback, this);
   _subVel     = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 1, &IOTBot::velocityCallback, this);
   _pubToF     = _nh.advertise<std_msgs::Float32MultiArray>("tof", 1);
