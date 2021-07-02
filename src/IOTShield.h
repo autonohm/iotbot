@@ -60,42 +60,129 @@ enum eLighting {lightsOff    = CMD_LIGHTS_OFF,
 class IOTShield
 {
 public:
+   /**
+    * Default Constructor
+    */
    IOTShield();
-   
+
+   /**
+    * Destructor
+    */  
    ~IOTShield();
 
+   /**
+    * Enable shield (must be done before steering)
+    * @return success
+    */
    bool enable();
    
+   /**
+    * Disable shield (no motion can be performed after disabling)
+    * @return success
+    */
    bool disable();
 
+   /**
+    * Set ration of motor gears
+    * @param[in] gearRatio gear ratio
+    * @return success
+    */
    bool setGearRatio(float gearRatio);
    
+   /**
+    * Set ticks per revolution of encoders
+    * @param[in] ticksPerRev ticks per revoluation (raising and falling edges)
+    * @return success
+    */
    bool setTicksPerRev(float ticksPerRev);
 
+   /**
+    * Set proportional coefficient of closed loop controller
+    * @param[in] kp proportional weight
+    * @return success
+    */
    bool setKp(float kp);
-   
+
+   /**
+    * Set integration coefficient of closed loop controller
+    * @param[in] ki integration coefficient
+    * @return success
+    */   
    bool setKi(float ki);
-      
+
+   /**
+    * Set differentiating coefficient of closed loop controller
+    * @param[in] kd differentiating coefficient
+    * @return success
+    */   
    bool setKd(float kd);
 
+   /**
+    * Set low pass coefficient of set point. New values are weighted with this value.
+    * @param[in] weight low pass coefficient of set point
+    * @return success
+    */  
    bool setLowPassSetPoint(float weight);
 
+   /**
+    * Set low pass coefficient of encoder measurements. New values are weighted with this value.
+    * @param[in] weight low pass coefficient of encoder measurements
+    * @return success
+    */ 
    bool setLowPassEncoder(float weight);
 
+   /**
+    * Set PWM of motors
+    * @param[in] pulse width modulation of motors
+    * @return success
+    */
    bool setPWM(int8_t pwm[4]);
 
+   /**
+    * Set command variable of closed loop controllers for motor control
+    * @param[in] rpm revolutions per minute
+    * @return success
+    */
    bool setRPM(float rpm[4]);
 
+   /**
+    * Get actual revolutions per minute
+    * @return revolutions per minutes
+    */
    const std::vector<float> getRPM();
 
+   /**
+    * Set lighting effects
+    * @param[in] light lighting effect
+    * @param[in] rgb color triple for lighting effect
+    * return success
+    */
    bool setLighting(eLighting light, unsigned char rgb[3]);
    
+   /**
+    * Switch on/off auxiliary output (channel 1)
+    * @param[in] on on/off state
+    * @return success
+    */
    bool setAUX1(bool on);
    
+   /**
+    * Switch on/off auxiliary output (channel 2)
+    * @param[in] on on/off state
+    * @return success
+    */
    bool setAUX2(bool on);
    
+   /**
+    * Get system voltage
+    * @return system voltage
+    */
    float getSystemVoltage();
    
+   /**
+    * Get time-of-flight measurements
+    * @return ToF measurements
+    */
    const std::vector<float> getRangeMeasurements();
    
 private:
