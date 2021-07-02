@@ -4,7 +4,8 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
-
+#include <std_msgs/Float32.h>
+#include <std_msgs/Float32MultiArray.h>
 #include <iostream>
 #include "IOTShield.h"
 
@@ -76,11 +77,11 @@ struct ChassisParams
 };
 
 /**
- * @class Main class for IotBot
+ * @class Main class for IOTBot
  * @author Stefan May
  * @date 08.05.2021
  */
-class IotBot
+class IOTBot
 {
 public:
 
@@ -89,12 +90,12 @@ public:
    * @params[in] chassisParams chassis parameters, including the map for assigning channels to position of wheels
    * @params[in] motorParams motor parameters
    */
-  IotBot(ChassisParams &chassisParams, MotorParams &motorParams);
+  IOTBot(ChassisParams &chassisParams, MotorParams &motorParams);
 
   /**
    * Destructor
    */
-  ~IotBot();
+  ~IOTBot();
 
   /**
    * ROS main loop (blocking method)
@@ -124,8 +125,11 @@ private:
   void controlMotors(float vFwd, float vLeft, float omega);
 
   ros::NodeHandle        _nh;
-  ros::Subscriber        _joySub;
-  ros::Subscriber        _velSub;
+  ros::Subscriber        _subJoy;
+  ros::Subscriber        _subVel;
+  ros::Publisher         _pubToF;
+  ros::Publisher         _pubRPM;
+  ros::Publisher         _pubVoltage;
 
   ChassisParams          _chassisParams;
   MotorParams*           _motorParams;
@@ -151,6 +155,9 @@ private:
 
   // conversion from revolutions per minute [RPM] to [rad/s]
   float                  _rpm2rad;
+
+  // RGB values of lighting system
+  unsigned char _rgb[3];
 
   // time elapsed since last call
   ros::Time              _lastCmd;

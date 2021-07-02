@@ -29,6 +29,7 @@ namespace iotbot
 #define CMD_CTL_KD          0x22
 #define CMD_CTL_ANTIWINDUP  0x23
 #define CMD_CTL_INPUTFILTER 0x24
+#define CMD_CTL_ENCLOWPASS  0x25
 
 // Platform parameters
 #define CMD_GEARRATIO       0x30
@@ -43,14 +44,18 @@ namespace iotbot
 #define CMD_FLASH_LEFT      0x46 // Flash lights
 #define CMD_FLASH_RIGHT     0x47 // Flash lights
 #define CMD_PULSATION       0x48 // Pulsation
+#define CMD_ROTATION        0x49 // Rotation light, e.g. police light in blue
+#define CMD_RUNNING         0x4A // Running light
 
 enum eLighting {lightsOff    = CMD_LIGHTS_OFF,
-					 dimLight     = CMD_DIM_LIGHT,
+                dimLight     = CMD_DIM_LIGHT,
                 beamLight    = CMD_HIGH_BEAM,
                 warningLight = CMD_FLASH_ALL,
                 flashLeft    = CMD_FLASH_LEFT,
                 flashRight   = CMD_FLASH_RIGHT,
-                pulsation    = CMD_PULSATION};
+                pulsation    = CMD_PULSATION,
+                rotation     = CMD_ROTATION,
+                running      = CMD_RUNNING};
 
 class IOTShield
 {
@@ -73,13 +78,17 @@ public:
       
    bool setKd(float kd);
 
+   bool setLowPassSetPoint(float weight);
+
+   bool setLowPassEncoder(float weight);
+
    bool setPWM(int8_t pwm[4]);
 
    bool setRPM(float rpm[4]);
 
    const std::vector<float> getRPM();
 
-   bool setLighting(eLighting light);
+   bool setLighting(eLighting light, unsigned char rgb[3]);
    
    bool setAUX1(bool on);
    
