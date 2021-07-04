@@ -6,6 +6,7 @@
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <sensor_msgs/Imu.h>
 #include <iostream>
 #include "IOTShield.h"
 
@@ -24,15 +25,27 @@ struct MotorParams
   float            gearRatio;
   float            encoderRatio;
   float            rpmMax;
-
+  int              controlFrequency;
+  float            kp;
+  float            ki;
+  float            kd;
+  float            lowPassInputFilter;
+  float            lowPassEncoderTicks;
+  
   /**
    * Standard constructor assigns default parameters
    */
   MotorParams()
   {
-    gearRatio      = 0.f;
-    encoderRatio   = 0.f;
-    rpmMax         = 0.f;
+    gearRatio           = 0.f;
+    encoderRatio        = 0.f;
+    rpmMax              = 0.f;
+    controlFrequency    = 16000;
+    kp                  = 0.f;
+    ki                  = 0.f;
+    kd                  = 0.f;
+    lowPassInputFilter  = 1.f;
+    lowPassEncoderTicks = 1.f;
   }
 
   /**
@@ -41,9 +54,15 @@ struct MotorParams
    */
   MotorParams(const MotorParams &p)
   {
-    gearRatio      = p.gearRatio;
-    encoderRatio   = p.encoderRatio;
-    rpmMax         = p.rpmMax;
+    gearRatio           = p.gearRatio;
+    encoderRatio        = p.encoderRatio;
+    rpmMax              = p.rpmMax;
+    controlFrequency    = p.controlFrequency;
+    kp                  = p.kp;
+    ki                  = p.ki;
+    kd                  = p.kd;
+    lowPassInputFilter  = p.lowPassInputFilter;
+    lowPassEncoderTicks = p.lowPassEncoderTicks;
   }
 };
 
@@ -62,6 +81,7 @@ struct ChassisParams
   int   chRearLeft;
   int   chRearRight;
   int   direction;
+  int   enableYMotion;
 
   ChassisParams()
   {
@@ -69,10 +89,11 @@ struct ChassisParams
     wheelBase           = 0.f;
     wheelDiameter       = 0.f;
     chFrontLeft         = 0;
-    chFrontRight       = 0;
+    chFrontRight        = 0;
     chRearLeft          = 0;
     chRearRight         = 0;
     direction           = 0;
+    enableYMotion       = 0;
   }
 };
 
@@ -130,6 +151,7 @@ private:
   ros::Publisher         _pubToF;
   ros::Publisher         _pubRPM;
   ros::Publisher         _pubVoltage;
+  ros::Publisher         _pubIMU;
 
   ChassisParams          _chassisParams;
   MotorParams*           _motorParams;
@@ -156,8 +178,11 @@ private:
   // conversion from revolutions per minute [RPM] to [rad/s]
   float                  _rpm2rad;
 
+  // enable motion in direction of the y-axis. This is only meaningful for mecanum steering.
+  bool                   _enableYMotion;
+
   // RGB values of lighting system
-  unsigned char _rgb[3];
+  unsigned char          _rgb[3];
 
   // time elapsed since last call
   ros::Time              _lastCmd;

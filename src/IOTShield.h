@@ -20,7 +20,7 @@ namespace iotbot
 // Operating commands
 #define CMD_SETPWM          0x10
 #define CMD_SETRPM          0x11
-#define CMD_FREQ_SCALE      0x12
+#define CMD_FREQ            0x12
 #define CMD_SYNC            0x13
 
 // Closed/Open loop controller parameters
@@ -78,6 +78,8 @@ public:
       
    bool setKd(float kd);
 
+   bool setControlFrequency(uint32_t freq);
+
    bool setLowPassSetPoint(float weight);
 
    bool setLowPassEncoder(float weight);
@@ -97,6 +99,10 @@ public:
    float getSystemVoltage();
    
    const std::vector<float> getRangeMeasurements();
+
+   const std::vector<float> getAcceleration();
+
+   const std::vector<float> getAngularRate();
    
 private:
 
@@ -114,6 +120,10 @@ private:
       
    std::vector<float> _ranges;
    
+   std::vector<float> _acceleration;
+
+   std::vector<float> _angularRate;
+
    double _timeCom;
    
 };

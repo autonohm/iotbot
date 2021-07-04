@@ -21,6 +21,12 @@ void floatToByteArray(float* floatVar, int8_t* byteArray)
    memcpy(byteArray, var, sizeof(floatVar));
 }
 
+void intToByteArray(uint32_t* iVar, int8_t* byteArray)
+{
+   uint8_t* var = (uint8_t*)(iVar);
+   memcpy(byteArray, var, sizeof(iVar));
+}
+
 const char* devPath = "/dev/ttyS1";
 
 IOTShield::IOTShield()
@@ -29,7 +35,9 @@ IOTShield::IOTShield()
 
    _rpm.resize(4);
    _ranges.resize(4);
-   
+   _acceleration.resize(3);
+   _angularRate.resize(3);
+
    _uart = new mraa::Uart(devPath);
 
    if (_uart->setBaudRate(115200) != mraa::SUCCESS) {
@@ -111,6 +119,15 @@ bool IOTShield::setKd(float kd)
    _txBuf[0] = 0xFF;
    _txBuf[1] = CMD_CTL_KD;
    floatToByteArray(&kd, (int8_t*)&(_txBuf[2]));
+   sendReceive();
+   return 1;
+}
+
+bool IOTShield::setControlFrequency(uint32_t freq)
+{
+   _txBuf[0] = 0xFF;
+   _txBuf[1] = CMD_FREQ;
+   intToByteArray(&freq, (int8_t*)&(_txBuf[2]));
    sendReceive();
    return 1;
 }
@@ -205,6 +222,16 @@ const std::vector<float> IOTShield::getRangeMeasurements()
    return _ranges;
 }
 
+const std::vector<float> IOTShield::getAcceleration()
+{
+   return _acceleration;
+}
+
+const std::vector<float> IOTShield::getAngularRate()
+{
+   return _angularRate;
+}
+
 void IOTShield::sendReceive()
 {
 
@@ -218,22 +245,37 @@ void IOTShield::sendReceive()
     _timeCom = now;
    _uart->write((char*)_txBuf, 11);
    _uart->read(_rxBuf, 32);
+
+   for(int i=0; i<3; i++)
+   {
+      int16_t  val     = _rxBuf[10+2*i];
+      val              = val << 8;
+      val             |= _rxBuf[9+2*i];
+      // convert from mg*10 to g
+      _acceleration[i] = ((float)val)/10000.f;
+
+      val              = _rxBuf[16+2*i];
+      val              = val << 8;
+      val             |= _rxBuf[15+2*i];
+      // convert from mdps/10 to dps
+      _angularRate[i]  = ((float)val)/100.f;
+   }
    for(int i=0; i<4; i++)
    {
       int16_t val  = _rxBuf[2*i+2] << 8;
       val         |= _rxBuf[2*i+1];
-		_rpm[i]      = ((float)val)/100.f;
+      _rpm[i]      = ((float)val)/100.f;
    
       unsigned short distanceInMM = _rxBuf[22+2*i];
-      distanceInMM = distanceInMM << 8;
-      distanceInMM |= _rxBuf[21+2*i];
-      _ranges[i] = (float)distanceInMM;
-      _ranges[i] /= 1000.f;
+      distanceInMM                = distanceInMM << 8;
+      distanceInMM               |= _rxBuf[21+2*i];
+      _ranges[i]                  = (float)distanceInMM;
+      _ranges[i]                 /= 1000.f;
    }
    unsigned int voltage = _rxBuf[30];
-   voltage = voltage << 8;
-   voltage |= _rxBuf[29];
-   _systemVoltage = (float) voltage / 100.f;   
+   voltage              = voltage << 8;
+   voltage             |= _rxBuf[29];
+   _systemVoltage       = (float) voltage / 100.f;   
 }
 
 } // namespace
