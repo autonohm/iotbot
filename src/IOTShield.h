@@ -61,7 +61,7 @@ enum eLighting {lightsOff    = CMD_LIGHTS_OFF,
  * @class IOTShield
  * @brief Interface class to IOTShield via UART
  * @author Stefan May
- * @date 4.7.2021
+ * @date 04.07.2021
  */
 class IOTShield
 {

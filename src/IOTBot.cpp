@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include "IOTBot.h"
 
 using namespace std;
@@ -68,10 +67,7 @@ void IOTBot::run()
 
   float r[4];
   float voltage;
-
   int state = 0;
-
-
   unsigned int cnt = 0;
   std_msgs::Float32MultiArray msgToF;
   std_msgs::Float32MultiArray msgRPM;
@@ -128,7 +124,6 @@ void IOTBot::run()
     rate.sleep();
 
     run = ros::ok();
-
   }
 }
 

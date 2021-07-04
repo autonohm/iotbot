@@ -234,7 +234,6 @@ const std::vector<float> IOTShield::getAngularRate()
 
 void IOTShield::sendReceive()
 {
-
     timeval clock;
     double now = 0.0;
     do
