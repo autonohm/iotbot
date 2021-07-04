@@ -32,12 +32,12 @@ namespace iotbot
 #define CMD_CTL_ENCLOWPASS  0x25
 
 // Platform parameters
-#define CMD_GEARRATIO       0x30
-#define CMD_TICKSPERREV     0x31
+#define CMD_GEARRATIO       0x30 // Ratio of motor gears
+#define CMD_TICKSPERREV     0x31 // Ticks per motor revolution ((raising + falling edges) x 2 channels)
 
-#define CMD_AUX1            0x40
-#define CMD_AUX2            0x41
-#define CMD_LIGHTS_OFF      0x42
+#define CMD_AUX1            0x40 // Enable/Disable auxilary power output 1
+#define CMD_AUX2            0x41 // Enable/Disable auxilary power output 2
+#define CMD_LIGHTS_OFF      0x42 // Switch lights off
 #define CMD_DIM_LIGHT       0x43 // Dimmed headlight
 #define CMD_HIGH_BEAM       0x44 // High beam headlight
 #define CMD_FLASH_ALL       0x45 // Flash lights
@@ -57,51 +57,157 @@ enum eLighting {lightsOff    = CMD_LIGHTS_OFF,
                 rotation     = CMD_ROTATION,
                 running      = CMD_RUNNING};
 
+/**
+ * @class IOTShield
+ * @brief Interface class to IOTShield via UART
+ * @author Stefan May
+ * @date 4.7.2021
+ */
 class IOTShield
 {
 public:
+   /**
+    * Default Constructor
+    */
    IOTShield();
-   
+
+   /**
+    * Destructor
+    */  
    ~IOTShield();
 
+   /**
+    * Enable shield (must be done before steering)
+    * @return success
+    */
    bool enable();
    
+   /**
+    * Disable shield (no motion can be performed after disabling)
+    * @return success
+    */
    bool disable();
 
+   /**
+    * Set ration of motor gears
+    * @param[in] gearRatio gear ratio
+    * @return success
+    */
    bool setGearRatio(float gearRatio);
    
+   /**
+    * Set ticks per revolution of encoders
+    * @param[in] ticksPerRev ticks per revoluation (raising and falling edges)
+    * @return success
+    */
    bool setTicksPerRev(float ticksPerRev);
 
+   /**
+    * Set proportional coefficient of closed loop controller
+    * @param[in] kp proportional weight
+    * @return success
+    */
    bool setKp(float kp);
-   
+
+   /**
+    * Set integration coefficient of closed loop controller
+    * @param[in] ki integration coefficient
+    * @return success
+    */   
    bool setKi(float ki);
-      
+
+   /**
+    * Set differentiating coefficient of closed loop controller
+    * @param[in] kd differentiating coefficient
+    * @return success
+    */   
    bool setKd(float kd);
 
+   /**
+    * Set frequency of bridge driver for motor control.
+    * param[in] freq frequency in HZ in range [1000, 1000000]
+    * return success
+    */
    bool setControlFrequency(uint32_t freq);
 
+   /**
+    * Set low pass coefficient of set point. New values are weighted with this value.
+    * @param[in] weight low pass coefficient of set point
+    * @return success
+    */  
    bool setLowPassSetPoint(float weight);
 
+   /**
+    * Set low pass coefficient of encoder measurements. New values are weighted with this value.
+    * @param[in] weight low pass coefficient of encoder measurements
+    * @return success
+    */ 
    bool setLowPassEncoder(float weight);
 
+   /**
+    * Set PWM of motors
+    * @param[in] pulse width modulation of motors
+    * @return success
+    */
    bool setPWM(int8_t pwm[4]);
 
+   /**
+    * Set command variable of closed loop controllers for motor control
+    * @param[in] rpm revolutions per minute
+    * @return success
+    */
    bool setRPM(float rpm[4]);
 
+   /**
+    * Get actual revolutions per minute
+    * @return revolutions per minutes
+    */
    const std::vector<float> getRPM();
 
+   /**
+    * Set lighting effects
+    * @param[in] light lighting effect
+    * @param[in] rgb color triple for lighting effect
+    * return success
+    */
    bool setLighting(eLighting light, unsigned char rgb[3]);
    
+   /**
+    * Switch on/off auxiliary output (channel 1)
+    * @param[in] on on/off state
+    * @return success
+    */
    bool setAUX1(bool on);
    
+   /**
+    * Switch on/off auxiliary output (channel 2)
+    * @param[in] on on/off state
+    * @return success
+    */
    bool setAUX2(bool on);
    
+   /**
+    * Get system voltage
+    * @return system voltage
+    */
    float getSystemVoltage();
    
+   /**
+    * Get time-of-flight measurements
+    * @return ToF measurements
+    */
    const std::vector<float> getRangeMeasurements();
 
+   /**
+    * Get linear acceleration in g (multiple of 9,81 m/s^2)
+    * return 3-dimensional measurement vector
+    */
    const std::vector<float> getAcceleration();
 
+   /**
+    * Get angular rate in degrees per second
+    * return 3-dimensional measurement vector
+    */
    const std::vector<float> getAngularRate();
    
 private:
