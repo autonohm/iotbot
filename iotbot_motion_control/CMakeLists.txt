@@ -22,29 +22,43 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(iotbot_interface REQUIRED)
 
+set(NODE_NAME_OMNI iotbot_motion_omnidirectional_node)
+set(NODE_NAME_DIFF iotbot_motion_differential_node)
 
+add_executable(${NODE_NAME_OMNI}
+  src/iotbot_motion_control.cpp
+  src/iotbot_motion_omnidirectional_node.cpp)
 
-add_executable(iotbot_motion_control_node src/iotbot_motion_control_node.cpp)
-ament_target_dependencies(iotbot_motion_control_node rclcpp std_msgs geometry_msgs iotbot_interface)
-target_include_directories(iotbot_motion_control_node PUBLIC
+add_executable(${NODE_NAME_DIFF}
+  src/iotbot_motion_control.cpp
+  src/iotbot_motion_differential_node.cpp)
+
+ament_target_dependencies(${NODE_NAME_OMNI}
+  rclcpp
+  std_msgs
+  geometry_msgs
+  iotbot_interface)
+
+ament_target_dependencies(${NODE_NAME_DIFF}
+  rclcpp
+  std_msgs
+  geometry_msgs
+  iotbot_interface)
+
+target_include_directories(${NODE_NAME_OMNI} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>)
+
+target_include_directories(${NODE_NAME_DIFF} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>)
 
 install(TARGETS
-  iotbot_motion_control_node
+  ${NODE_NAME_OMNI}
+  ${NODE_NAME_DIFF}
   
-  DESTINATION lib/${PROJECT_NAME})
-
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
-  #set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # uncomment the line when this package is not in a git repo
-  #set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-endif()
+DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
