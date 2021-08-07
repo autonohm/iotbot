@@ -34,6 +34,7 @@ IOTBot::IOTBot(ChassisParams &chassisParams, MotorParams &motorParams)
 
   _subJoy     = _nh.subscribe<sensor_msgs::Joy>("joy", 1, &IOTBot::joyCallback, this);
   _subVel     = _nh.subscribe<geometry_msgs::Twist>("vel/teleop", 1, &IOTBot::velocityCallback, this);
+  _srvEnable  = _nh.advertiseService("enable", &IOTBot::enableCallback, this);
   _pubToF     = _nh.advertise<std_msgs::Float32MultiArray>("tof", 1);
   _pubRPM     = _nh.advertise<std_msgs::Float32MultiArray>("rpm", 1);
   _pubVoltage = _nh.advertise<std_msgs::Float32>("voltage", 1);
@@ -125,6 +126,22 @@ void IOTBot::run()
 
     run = ros::ok();
   }
+}
+
+bool IOTBot::enableCallback(std_srvs::SetBool::Request& request, std_srvs::SetBool::Response& response)
+{
+   if(request.data==true)
+   {
+     ROS_INFO("Enabling robot");
+     _shield->enable();
+   }
+   else
+   {
+     ROS_INFO("Disabling robot");
+     _shield->disable();
+   }
+   response.success = true;
+   return true;
 }
 
 void IOTBot::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)

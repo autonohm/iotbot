@@ -6,6 +6,7 @@
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_srvs/SetBool.h>
 #include <sensor_msgs/Imu.h>
 #include <iostream>
 #include "IOTShield.h"
@@ -126,6 +127,14 @@ public:
 private:
 
   /**
+   * ROS service callback for enabling robot
+   * @param[in] request service request data
+   * @param[out] response service response data
+   * @return success state
+   */
+  bool enableCallback(std_srvs::SetBool::Request& request, std_srvs::SetBool::Response& response);
+
+  /**
    * ROS joystick callback
    * @param[in] joy message with joystick command
    */
@@ -148,6 +157,7 @@ private:
   ros::NodeHandle        _nh;
   ros::Subscriber        _subJoy;
   ros::Subscriber        _subVel;
+  ros::ServiceServer     _srvEnable;
   ros::Publisher         _pubToF;
   ros::Publisher         _pubRPM;
   ros::Publisher         _pubVoltage;
