@@ -16,6 +16,8 @@ namespace iotbot
 #define CMD_SENDRPM         0x05
 #define CMD_SENDPOS         0x06
 #define CMD_INVERTENC       0x07
+#define CMD_LOWVOLTAGECHECK 0x08
+#define CMD_STALLCHECK      0x09
 
 // Operating commands
 #define CMD_SETPWM          0x10
